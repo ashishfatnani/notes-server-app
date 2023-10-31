@@ -1,7 +1,7 @@
 const Notes = require("../models/Notes");
 
 /*  @desc -> Create Note 
-    @route -> POST /api/v1/notes
+    @route -> POST /note
     @access -> Public
 */
 exports.createNote = async (req, res, next) => {
@@ -21,10 +21,9 @@ exports.createNote = async (req, res, next) => {
 };
 
 /*  @desc -> Get all Notes 
-    @route -> GET /api/v1/notes
+    @route -> GET /notes
     @access -> Public
 */
-
 exports.getAllNotes = async (req, res, next) => {
   try {
     const notesData = await Notes.find();
@@ -39,14 +38,32 @@ exports.getAllNotes = async (req, res, next) => {
   }
 };
 
+/*  @desc -> Update Note 
+    @route -> PUT /note
+    @access -> Public
+*/
 exports.updateNote = async (req, res, next) => {
   try {
-    const updatedData = await Notes.findByIdAndUpdate(req.params.id, {
-      ...req.body,
-    });
+    const updatedData = await Notes.findByIdAndUpdate(
+      req.body.id,
+      {
+        ...req.body,
+        lastModified: new Date(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    if (!updatedData) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found.",
+      });
+    }
     return res.status(200).json({
       data: updatedData,
-      message: "Note is now Updated successfully!",
+      message: `Note with id: ${req.body.id} is now Updated successfully!`,
     });
   } catch (error) {
     return res.status(400).json({
@@ -55,12 +72,55 @@ exports.updateNote = async (req, res, next) => {
   }
 };
 
+/*  @desc -> Delete Note 
+    @route -> DELETE /note
+    @access -> Public
+*/
 exports.deleteNote = async (req, res, next) => {
   try {
-    const deletedData = await Notes.findByIdAndDelete(req.params.id);
+    const deletedData = await Notes.findByIdAndDelete(req.body.id);
     return res.status(200).json({
       data: deletedData,
-      message: "Note is now Deleted successfully!",
+      message: `Note with id: ${req.body.id} is now Deleted successfully!`,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Something went wrong!",
+    });
+  }
+};
+
+/*  @desc -> Delete all Notes 
+    @route -> DELETE /notes
+    @access -> Public
+*/
+exports.deleteAllNotes = async (req, res, next) => {
+  try {
+    const deleteAllData = await Notes.deleteMany({});
+    return res.status(200).json({
+      data: deleteAllData,
+      message: "All Notes are now Deleted successfully!",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Something went wrong!",
+    });
+  }
+};
+
+/*  @desc -> Search Note 
+    @route -> GET /note/search/:searchKey
+    @access -> Public
+*/
+exports.getNotesBySearch = async (req, res, next) => {
+  const query = {};
+  try {
+    query.$or = [{ text: { $regex: req.params.searchKey, $options: "i" } }];
+
+    const searchData = await Notes.find(req.params.searchKey ? query : {});
+    return res.status(200).json({
+      data: searchData,
+      message: "This are the notes according to your search!",
     });
   } catch (error) {
     return res.status(400).json({

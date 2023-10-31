@@ -39,8 +39,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/health", healthRouter);
-app.use("/notes", notesRouter);
-app.use("/note", noteRouter);
+app.use("/", notesRouter);
+app.use("/", noteRouter);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
